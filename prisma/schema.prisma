@@ -1,0 +1,314 @@
+// Golden Rule platform schema — SQLite for zero-config local dev.
+// Swap the datasource to postgresql via DATABASE_URL for production.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         String   @default("ADMIN") // SUPER_ADMIN | ADMIN | MANAGER | DISPATCHER | TECHNICIAN | MARKETING | CONTENT_EDITOR
+  title        String?
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  assignedLeads Lead[]        @relation("AssignedLeads")
+  activities    LeadActivity[]
+  appointments  Appointment[] @relation("TechnicianAppointments")
+  auditLogs     AuditLog[]
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  firstName String
+  lastName  String
+  email     String?
+  phone     String?
+  street    String?
+  city      String?
+  state     String?  @default("TX")
+  zip       String?
+  type      String   @default("RESIDENTIAL") // RESIDENTIAL | COMMERCIAL | NEW_CONSTRUCTION
+  notes     String?
+  isDemo    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  leads           Lead[]
+  appointments    Appointment[]
+  serviceRequests ServiceRequest[]
+}
+
+model Lead {
+  id           String    @id @default(cuid())
+  customerId   String?
+  customer     Customer? @relation(fields: [customerId], references: [id])
+  name         String
+  email        String?
+  phone        String?
+  service      String?
+  customerType String    @default("RESIDENTIAL")
+  message      String?
+  source       String    @default("WEBSITE") // WEBSITE | CHATBOT | PHONE | MISSED_CALL | CONTACT_FORM | SERVICE_REQUEST | ESTIMATE_REQUEST | FINANCING | REFERRAL | ORGANIC | PAID | SOCIAL | OTHER
+  status       String    @default("NEW") // NEW | CONTACTED | QUALIFIED | ESTIMATE | SCHEDULED | IN_PROGRESS | COMPLETED | REVIEW_REQUESTED | CLOSED
+  priority     String    @default("NORMAL") // LOW | NORMAL | HIGH | EMERGENCY
+  value        Float?
+  assignedToId String?
+  assignedTo   User?     @relation("AssignedLeads", fields: [assignedToId], references: [id])
+
+  utmSource   String?
+  utmMedium   String?
+  utmCampaign String?
+  utmTerm     String?
+  utmContent  String?
+  landingPage String?
+  referrer    String?
+
+  isDemo    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  activities      LeadActivity[]
+  appointments    Appointment[]
+  serviceRequests ServiceRequest[]
+  estimates       Estimate[]
+  messages        Message[]
+  reviewRequests  ReviewRequest[]
+  missedCalls     MissedCall[]
+}
+
+model LeadActivity {
+  id          String   @id @default(cuid())
+  leadId      String
+  lead        Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  type        String // CREATED | STATUS_CHANGE | NOTE | SMS_SENT | EMAIL_SENT | CALL | APPOINTMENT | ESTIMATE | REVIEW_REQUEST | SYSTEM
+  description String
+  meta        String?
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id])
+  createdAt   DateTime @default(now())
+}
+
+model ServiceRequest {
+  id            String    @id @default(cuid())
+  leadId        String?
+  lead          Lead?     @relation(fields: [leadId], references: [id])
+  customerId    String?
+  customer      Customer? @relation(fields: [customerId], references: [id])
+  serviceType   String
+  customerType  String    @default("RESIDENTIAL")
+  firstName     String
+  lastName      String
+  email         String
+  phone         String
+  street        String
+  city          String
+  zip           String
+  preferredDate String?
+  preferredTime String?
+  description   String?
+  attachments   String? // JSON array of stored file paths
+  status        String    @default("NEW") // NEW | REVIEWED | SCHEDULED | CLOSED
+  isDemo        Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+}
+
+model Appointment {
+  id           String    @id @default(cuid())
+  leadId       String?
+  lead         Lead?     @relation(fields: [leadId], references: [id])
+  customerId   String?
+  customer     Customer? @relation(fields: [customerId], references: [id])
+  technicianId String?
+  technician   User?     @relation("TechnicianAppointments", fields: [technicianId], references: [id])
+  service      String
+  start        DateTime
+  end          DateTime
+  status       String    @default("REQUESTED") // REQUESTED | CONFIRMED | RESCHEDULED | IN_PROGRESS | COMPLETED | CANCELLED | NO_SHOW
+  location     String?
+  notes        String?
+  isDemo       Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+}
+
+model Estimate {
+  id        String   @id @default(cuid())
+  leadId    String
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  title     String
+  amount    Float?
+  status    String   @default("DRAFT") // DRAFT | SENT | ACCEPTED | DECLINED
+  notes     String?
+  isDemo    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model Review {
+  id           String    @id @default(cuid())
+  customerName String
+  rating       Int       @default(5)
+  title        String?
+  text         String
+  source       String    @default("WEBSITE") // WEBSITE | GOOGLE | FACEBOOK | OTHER
+  serviceDate  DateTime?
+  published    Boolean   @default(true)
+  response     String?
+  isDemo       Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+}
+
+model ReviewRequest {
+  id        String    @id @default(cuid())
+  leadId    String
+  lead      Lead      @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  channel   String    @default("SMS") // SMS | EMAIL
+  status    String    @default("PENDING") // PENDING | SENT | COMPLETED | DECLINED
+  sentAt    DateTime?
+  isDemo    Boolean   @default(false)
+  createdAt DateTime  @default(now())
+}
+
+model MissedCall {
+  id          String    @id @default(cuid())
+  phone       String
+  callTime    DateTime  @default(now())
+  status      String    @default("NEW") // NEW | TEXTED | RESPONDED | RESOLVED
+  smsBody     String?
+  respondedAt DateTime?
+  leadId      String?
+  lead        Lead?     @relation(fields: [leadId], references: [id])
+  isDemo      Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  leadId    String
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  direction String   @default("OUTBOUND") // OUTBOUND | INBOUND
+  channel   String   @default("SMS") // SMS | EMAIL
+  body      String
+  status    String   @default("MOCKED") // MOCKED | SENT | FAILED (mock adapter until a provider is configured)
+  createdAt DateTime @default(now())
+}
+
+model ChatSession {
+  id        String        @id @default(cuid())
+  visitorId String?
+  leadId    String?
+  createdAt DateTime      @default(now())
+  messages  ChatMessage[]
+}
+
+model ChatMessage {
+  id        String      @id @default(cuid())
+  sessionId String
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role      String // user | assistant
+  content   String
+  createdAt DateTime    @default(now())
+}
+
+model Article {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  title       String
+  excerpt     String
+  body        String
+  category    String    @default("HVAC Education") // Cooling | Heating | Maintenance | Indoor Air Quality | Energy Efficiency | HVAC Education
+  heroImage   String?
+  published   Boolean   @default(true)
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Service {
+  id        String  @id @default(cuid())
+  slug      String  @unique
+  name      String
+  division  String // RESIDENTIAL | COMMERCIAL | NEW_CONSTRUCTION
+  excerpt   String
+  body      String
+  heroImage String?
+  published Boolean @default(true)
+  sortOrder Int     @default(0)
+}
+
+model ServiceArea {
+  id        String  @id @default(cuid())
+  slug      String  @unique
+  city      String
+  state     String  @default("TX")
+  body      String
+  published Boolean @default(true)
+}
+
+model CareerApplication {
+  id          String   @id @default(cuid())
+  name        String
+  email       String
+  phone       String
+  position    String?
+  coverLetter String?
+  resumePath  String?
+  status      String   @default("NEW") // NEW | REVIEWED | INTERVIEW | HIRED | DECLINED
+  isDemo      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model ContactSubmission {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  message   String
+  handled   Boolean  @default(false)
+  isDemo    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  type      String // NEW_LEAD | SERVICE_REQUEST | MISSED_CALL | CHAT_LEAD | APPOINTMENT | REVIEW | CONTACT | ESTIMATE_REQUEST | CAREER
+  title     String
+  body      String?
+  link      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model AnalyticsEvent {
+  id        String   @id @default(cuid())
+  type      String // page_view | phone_click | form_start | form_complete | chat_start | chat_lead | cta_click
+  path      String?
+  sessionId String?
+  meta      String?
+  createdAt DateTime @default(now())
+
+  @@index([type, createdAt])
+}
+
+model Setting {
+  key   String @id
+  value String // JSON
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  action    String
+  entity    String
+  entityId  String?
+  oldValue  String?
+  newValue  String?
+  createdAt DateTime @default(now())
+}
