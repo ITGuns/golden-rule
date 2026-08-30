@@ -39,3 +39,14 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# keep the documented env template
+!.env.example
+
+# local database & user uploads
+/prisma/dev.db
+/prisma/dev.db-journal
+/public/uploads/
+
+# local editor/agent config (absolute paths)
+.claude/

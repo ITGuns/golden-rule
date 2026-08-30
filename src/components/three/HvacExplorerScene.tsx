@@ -98,20 +98,13 @@ function Part({
   children: React.ReactNode;
   position?: [number, number, number];
 }) {
-  const ref = useRef<THREE.Group>(null);
   const isSel = selected === id;
-  useFrame(({ clock }) => {
-    if (!ref.current) return;
-    const pulse = isSel ? 1 + Math.sin(clock.elapsedTime * 4) * 0.02 : 1;
-    ref.current.scale.setScalar(pulse);
-  });
   const handle = (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
     onSelect(id);
   };
   return (
     <group
-      ref={ref}
       position={position}
       onPointerDown={handle}
       onPointerOver={() => (document.body.style.cursor = "pointer")}

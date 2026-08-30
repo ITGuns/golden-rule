@@ -107,3 +107,35 @@ export const articleSchema = z.object({
   heroImage: z.string().max(300).optional().nullable(),
   published: z.boolean().optional(),
 });
+
+/**
+ * Server-side service-request payload: the wizard fields plus the paths of
+ * files already uploaded through /api/uploads (max 3, site-relative).
+ */
+export const serviceRequestApiSchema = serviceRequestSchema.extend({
+  attachments: z
+    .array(z.string().min(1).max(300).startsWith("/uploads/"))
+    .max(3)
+    .optional(),
+});
+
+/** Career application payload — careerSchema plus an optional uploaded resume path. */
+export const careerApiSchema = careerSchema.extend({
+  resumePath: z.string().max(300).startsWith("/uploads/").optional().nullable(),
+});
+
+/** First-party analytics beacon payload (see src/lib/analytics-client.ts). */
+export const analyticsEventSchema = z.object({
+  type: z.enum([
+    "page_view",
+    "phone_click",
+    "form_start",
+    "form_complete",
+    "chat_start",
+    "chat_lead",
+    "cta_click",
+  ]),
+  path: z.string().max(300).optional().nullable(),
+  sessionId: z.string().max(60).optional().nullable(),
+  meta: z.record(z.string(), z.unknown()).optional().nullable(),
+});
