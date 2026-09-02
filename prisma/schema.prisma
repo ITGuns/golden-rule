@@ -1,13 +1,16 @@
-// Golden Rule platform schema — SQLite for zero-config local dev.
-// Swap the datasource to postgresql via DATABASE_URL for production.
+// Golden Rule platform schema — PostgreSQL (Supabase).
+// DATABASE_URL: pooled connection (PgBouncer transaction mode, port 6543) for
+// the serverless runtime. DIRECT_URL: session connection (port 5432) used by
+// `prisma db push` / migrations.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
