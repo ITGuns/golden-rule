@@ -530,7 +530,7 @@ export function Header() {
                         href="/how-hvac-works"
                         image="/images/AC_A_029-How-Your-AC-Cools-Your-Home-2-e1628799548613.jpg"
                         eyebrow="Interactive"
-                        title="See inside your comfort system in 3D"
+                        title="See inside your comfort system, part by part"
                         cta="How HVAC works"
                       />
                     </div>

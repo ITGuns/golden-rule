@@ -12,7 +12,7 @@ import { ChevronDown } from "lucide-react";
 export const metadata: Metadata = {
   title: "How HVAC Works — Interactive Guide",
   description:
-    "Explore an interactive 3D HVAC system: see how air moves from return to supply, what each component does, and get answers to common heating & cooling questions.",
+    "Explore an interactive guide to your HVAC system: see how air moves from return to supply, what each component does, and get answers to common heating & cooling questions.",
   alternates: { canonical: "/how-hvac-works" },
 };
 
@@ -86,11 +86,11 @@ export default async function HowHvacWorksPage() {
       <PageHero
         eyebrow="Comfort, explained"
         title="How your HVAC system works."
-        intro="Walk through a living 3D model of a home comfort system — component by component, airflow stage by airflow stage — then dig deeper with plain-English answers."
+        intro="Walk through a home comfort system in real photos — component by component, airflow stage by airflow stage — then dig deeper with plain-English answers."
         image="/images/air_conditioner_2050x700.jpg"
       />
 
-      {/* Interactive 3D explorer */}
+      {/* Interactive component guide */}
       <section className="border-t border-night-line bg-night py-16 text-white sm:py-20">
         <div className="container-site">
           <Reveal>
